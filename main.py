@@ -72,6 +72,7 @@ def main():
 
     handsDetector = mp.solutions.hands.Hands()
 
+    game_started = False
     victory = False
     while cap.isOpened():
         ret, frame = cap.read()
@@ -91,10 +92,21 @@ def main():
 
             finish_x = (cols - 1) * maze.cell_width + maze.cell_width // 2
             finish_y = (rows - 1) * maze.cell_height + maze.cell_height // 2
-            if abs(x_tip - finish_x) < maze.cell_width // 2 and abs(y_tip - finish_y) < maze.cell_height // 2:
+            start_x = maze.cell_width // 2
+            start_y = maze.cell_height // 2
+
+            if not game_started and abs(x_tip - start_x) < maze.cell_width // 2 and abs(
+                    y_tip - start_y) < maze.cell_height // 2:
+                game_started = True
+
+            if game_started and (x_tip - finish_x) < maze.cell_width // 2 and abs(y_tip - finish_y) < maze.cell_height // 2:
                 victory = True
 
         maze.draw(frame)
+
+        if not game_started:
+            cv2.putText(frame, "Place your finger in the START circle!", (window_width // 2 - 300, window_height // 2),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
 
         if victory:
             cv2.putText(frame, "YOU WIN!!!", (window_width // 2 - 150, window_height // 2),
