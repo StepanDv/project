@@ -58,7 +58,7 @@ class Maze:
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     window_width = 1000
     window_height = 600
     rows = 15
@@ -70,17 +70,39 @@ def main():
     while not maze.solve((0, 0), (rows - 1, cols - 1)):
         maze.generate()
 
+    handsDetector = mp.solutions.hands.Hands()
+
+    victory = False
     while cap.isOpened():
         ret, frame = cap.read()
 
         frame = cv2.flip(frame, 1)
 
         frame = cv2.resize(frame, (window_width, window_height))
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = handsDetector.process(frame)
+
+        if results.multi_hand_landmarks and not victory:
+            x_tip = int(results.multi_hand_landmarks[0].landmark[8].x *
+                        frame.shape[1])
+            y_tip = int(results.multi_hand_landmarks[0].landmark[8].y *
+                        frame.shape[0])
+            cv2.circle(frame, (x_tip, y_tip), 10, (255, 0, 0), -1)
+
+            finish_x = (cols - 1) * maze.cell_width + maze.cell_width // 2
+            finish_y = (rows - 1) * maze.cell_height + maze.cell_height // 2
+            if abs(x_tip - finish_x) < maze.cell_width // 2 and abs(y_tip - finish_y) < maze.cell_height // 2:
+                victory = True
 
         maze.draw(frame)
+
+        if victory:
+            cv2.putText(frame, "YOU WIN!!!", (window_width // 2 - 150, window_height // 2),
+                        cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
+
         cv2.imshow("Maze Game", frame)
 
-        if cv2.waitKey(1) & 0xFF == 27 or not ret:
+        if cv2.waitKey(1) & 0xFF == 27:
             break
 
 main()
