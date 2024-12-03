@@ -33,6 +33,29 @@ class Maze:
                            (self.rows - 1) * self.cell_height + self.cell_height // 2),
                    min(self.cell_width, self.cell_height) // 4, (255, 0, 0), -1)
 
+    def solve(self, start, end):
+        stack = [start]
+        used = set()
+
+        if self.maze[start[0]][start[1]] == 1:
+            return False
+
+        while stack:
+            x, y = stack.pop()
+
+            if (x, y) == end:
+                return True
+
+            used.add((x, y))
+
+            for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.rows and 0 <= ny < self.cols:
+                    if (nx, ny) not in used and self.maze[nx][ny] == 0:
+                        stack.append((nx, ny))
+
+        return False
+
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -43,6 +66,9 @@ def main():
 
     maze = Maze(window_width, window_height, rows, cols)
     maze.generate()
+
+    while not maze.solve((0, 0), (rows - 1, cols - 1)):
+        maze.generate()
 
     while cap.isOpened():
         ret, frame = cap.read()
