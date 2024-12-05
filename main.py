@@ -58,7 +58,7 @@ class Maze:
 
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     window_width = 1000
     window_height = 600
     maze_width = 500
@@ -66,74 +66,82 @@ def main():
     rows = 8
     cols = 10
 
-    maze = Maze(maze_width, maze_height, rows, cols)
-    maze.generate()
-
-    while not maze.solve((0, 0), (rows - 1, cols - 1)):
+    while cap.isOpened():
+        maze = Maze(maze_width, maze_height, rows, cols)
         maze.generate()
 
-    handsDetector = mp.solutions.hands.Hands()
+        while not maze.solve((0, 0), (rows - 1, cols - 1)):
+            maze.generate()
 
-    game_started = False
-    victory = False
+        handsDetector = mp.solutions.hands.Hands()
 
-    ox = (window_width - maze_width) // 2
-    oy = (window_height - maze_height) // 2
+        game_started = False
+        victory = False
+        game_over = False
 
-    while cap.isOpened():
-        ret, frame = cap.read()
+        ox = (window_width - maze_width) // 2
+        oy = (window_height - maze_height) // 2
 
-        frame = cv2.flip(frame, 1)
+        while cap.isOpened():
+            ret, frame = cap.read()
 
-        frame = cv2.resize(frame, (window_width, window_height))
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = handsDetector.process(frame)
+            if cv2.waitKey(1) & 0xFF == 27 or not ret:
+                exit(0)
 
-        if results.multi_hand_landmarks and not victory:
-            x_tip = int(results.multi_hand_landmarks[0].landmark[8].x *
-                        frame.shape[1])
-            y_tip = int(results.multi_hand_landmarks[0].landmark[8].y *
-                        frame.shape[0])
-            cv2.circle(frame, (x_tip, y_tip), 10, (255, 0, 0), -1)
+            if cv2.waitKey(1) & 0xFF == ord('r'):
+                break
 
-            finish_x = ox + (cols - 1) * maze.cell_width + maze.cell_width // 2
-            finish_y = oy + (rows - 1) * maze.cell_height + maze.cell_height // 2
-            start_x = ox + maze.cell_width // 2
-            start_y = oy + maze.cell_height // 2
+            frame = cv2.flip(frame, 1)
 
-            if game_started:
-                maze_x = (x_tip - ox) // maze.cell_width
-                maze_y = (y_tip - oy) // maze.cell_height
-                if maze_x == -1 or maze_x == maze.cols or maze_y == -1 or maze_y == maze.rows or (0 <= maze_x < cols and 0 <= maze_y < rows and maze.maze[maze_y][maze_x] == 1):
-                    cv2.putText(frame, "Game Over!", (window_width // 2 - 150, window_height // 2),
-                                cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3)
-                    cv2.imshow("Maze Game", frame)
-                    cv2.waitKey(3000)
-                    break
+            frame = cv2.resize(frame, (window_width, window_height))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = handsDetector.process(frame)
 
-            if not game_started and abs(x_tip - start_x) < maze.cell_width // 2 and abs(
-                    y_tip - start_y) < maze.cell_height // 2:
-                game_started = True
+            if results.multi_hand_landmarks and not victory:
+                x_tip = int(results.multi_hand_landmarks[0].landmark[8].x *
+                            frame.shape[1])
+                y_tip = int(results.multi_hand_landmarks[0].landmark[8].y *
+                            frame.shape[0])
+                cv2.circle(frame, (x_tip, y_tip), 10, (255, 0, 0), -1)
 
-            if game_started and (x_tip - finish_x) < maze.cell_width // 2 and abs(y_tip - finish_y) < maze.cell_height // 2:
-                victory = True
+                finish_x = ox + (cols - 1) * maze.cell_width + maze.cell_width // 2
+                finish_y = oy + (rows - 1) * maze.cell_height + maze.cell_height // 2
+                start_x = ox + maze.cell_width // 2
+                start_y = oy + maze.cell_height // 2
 
-        maze.draw(frame, ox, oy)
+                if game_started and not victory:
+                    maze_x = (x_tip - ox) // maze.cell_width
+                    maze_y = (y_tip - oy) // maze.cell_height
+                    if maze_x == -1 or maze_x == maze.cols or maze_y == -1 or maze_y == maze.rows or (
+                            0 <= maze_x < cols and 0 <= maze_y < rows and maze.maze[maze_y][maze_x] == 1):
+                        game_over = True
 
-        if not game_started:
-            cv2.putText(frame, "Place your finger in the START circle!", (window_width // 2 - 300, window_height // 2),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+                if not game_started and abs(x_tip - start_x) < maze.cell_width // 2 and abs(
+                        y_tip - start_y) < maze.cell_height // 2:
+                    game_started = True
 
-        if victory:
-            cv2.putText(frame, "YOU WIN!!!", (window_width // 2 - 150, window_height // 2),
-                        cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 3)
+                if not game_over and game_started and (x_tip - finish_x) < maze.cell_width // 2 and abs(
+                        y_tip - finish_y) < maze.cell_height // 2:
+                    victory = True
+
+            maze.draw(frame, ox, oy)
+
+            if not game_started and not game_over:
+                cv2.putText(frame, "Place your finger in the START circle!",
+                            (window_width // 2 - 300, window_height - 50),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+
+            if victory:
+                cv2.putText(frame, "YOU WIN! Press R to restart the game",
+                            (window_width // 2 - 300, window_height - 50),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+
+            if game_over:
+                cv2.putText(frame, "Game Over! Press R to restart the game",
+                            (window_width // 2 - 350, window_height - 50),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+
             cv2.imshow("Maze Game", frame)
-            cv2.waitKey(3000)
-            break
 
-        cv2.imshow("Maze Game", frame)
-
-        if cv2.waitKey(1) & 0xFF == 27:
-            break
 
 main()
