@@ -20,7 +20,7 @@ class Maze:
 
     def draw(self, frame, ox, oy):
         global game_started
-        cv2.putText(frame, "Keep your hand 2-3 meters away from the camera",
+        cv2.putText(frame, "Keep your hand 1-2 meters away from the camera",
                     (window_width // 2 - 400, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 3)
         for i in range(-1, self.rows + 1):
