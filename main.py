@@ -130,11 +130,11 @@ while cap.isOpened():
         finish_y = oy + (rows - 1) * maze.cell_height + maze.cell_height // 2
         start_x = ox + maze.cell_width // 2
         start_y = oy + maze.cell_height // 2
+        maze_x = (x_tip - ox) // maze.cell_width
+        maze_y = (y_tip - oy) // maze.cell_height
 
         if game_started and not victory:
-            maze_x = (x_tip - ox) // maze.cell_width
-            maze_y = (y_tip - oy) // maze.cell_height
-            if maze_x == -1 or maze_x == maze.cols or maze_y == -1 or maze_y == maze.rows or (
+            if maze_x == -1 or maze_x == cols or maze_y == -1 or maze_y == rows or (
                     0 <= maze_x < cols and 0 <= maze_y < rows and maze.maze[maze_y][maze_x] == 1):
                 game_over = True
 
@@ -142,8 +142,7 @@ while cap.isOpened():
                 y_tip - start_y) < maze.cell_height // 2:
             game_started = True
 
-        if not game_over and game_started and (x_tip - finish_x) < maze.cell_width // 2 and abs(
-                y_tip - finish_y) < maze.cell_height // 2:
+        if not game_over and game_started and maze_x == cols - 1 and maze_y == rows - 1:
             victory = True
 
     maze.draw(frame, ox, oy)
